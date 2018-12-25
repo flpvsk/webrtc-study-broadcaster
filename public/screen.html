@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      *, button, input, *:after, *:before {
+        box-sizing: border-box;
+      }
+
+      html {
+        font-size: 100%;
+        font-family: Arial, sans-serif;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      #controls.hidden, #wait.hidden {
+        z-index: 0;
+        display: none;
+      }
+
+      #controls, #wait {
+        z-index: 1;
+        position: absolute;
+        top:0%;
+        left: 0%;
+        right: 0%;
+        bottom: 0%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3em;
+      }
+
+      #play {
+        font-size: 1em;
+        margin: 16px;
+        padding: 8px 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <video
+      mute='true'
+      playsinline
+      autoplay
+      id='v'
+      width='100%'
+      height='100%'></video>
+
+
+    <div id='controls' class='hidden'>
+      <div>Someone is here! Press Play.</div>
+      <button
+        id='play'
+        style=''>
+          Play
+      </button>
+    </div>
+
+    <div id='wait'>
+      Waiting for someone to connect.
+    </div>
+
+    <script src='screen.js'></script>
+  </body>
+</html>
+
