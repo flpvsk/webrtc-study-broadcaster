@@ -64,6 +64,7 @@ wsServer.on('connection', (socket) => {
       info(`camera ${msg.from} sent offer to screen ${msg.to}`);
       if (!screens.has(msg.to)) {
         warn(`offer sent to screen ${msg.to} that's not registered`);
+        return;
       }
 
       const socket = sockets.get(msg.to);
@@ -74,10 +75,23 @@ wsServer.on('connection', (socket) => {
       info(`screen ${msg.from} sent answer to camera ${msg.to}`);
       if (!cameras.has(msg.to)) {
         warn(`offer sent to camera ${msg.to} that's not registered`);
+        return;
       }
 
       const socket = sockets.get(msg.to);
       socket.send(e);
+    }
+
+    if (msg.type === 'candidate') {
+      info(`ice candidate from ${msg.from} to ${msg.to}`);
+      const socketTo = sockets.get(msg.to);
+
+      if (!socketTo) {
+        warn(`candidate sent to ${msg.to}, that's not registered`);
+        return;
+      }
+
+      socketTo.send(e);
     }
   };
 

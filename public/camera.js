@@ -1,4 +1,10 @@
 (async function() {
+  const config = {
+    iceServers: [{
+      urls: ['stun:stun.l.google.com:19302']
+    }]
+  };
+
   const getRandomId = () => {
     return Math.floor(Math.random() * 10000);
   };
@@ -13,7 +19,12 @@
 
     return new Promise((resolve, reject) => {
       try {
-        ws = new WebSocket(`wss://${window.location.host}`);
+        const protocol = (
+          window.location.protocol === 'https:' ?
+            'wss:' :
+            'ws:'
+        );
+        ws = new WebSocket(`${protocol}//${window.location.host}`);
 
         const onOpen = () => {
           ws.send(JSON.stringify({
@@ -51,13 +62,24 @@
 
       if (msg.type === 'screens') {
         for (let screen of msg.screens) {
-          const peerConnection = new RTCPeerConnection();
+          const peerConnection = new RTCPeerConnection(config);
           connections.set(screen, peerConnection);
 
           peerConnection.addStream(window.v.srcObject);
 
           const sdp = await peerConnection.createOffer();
           await peerConnection.setLocalDescription(sdp);
+
+          peerConnection.onicecandidate = (e) => {
+            if (e.candidate) {
+              socket.send(JSON.stringify({
+                type: 'candidate',
+                from: peerId,
+                to: screen,
+                data: e.candidate,
+              }));
+            }
+          };
 
           socket.send(JSON.stringify({
             type: 'offer',
@@ -79,6 +101,16 @@
           console.log('Disconnecting from', msg.from);
           connection.close();
           connections.delete(msg.from);
+        }
+      }
+
+      if (msg.type === 'candidate') {
+        const connection = connections.get(msg.from);
+        if (connection) {
+          console.log('Adding candidate to', msg.from);
+          connection.addIceCandidate(new RTCIceCandidate(
+            msg.data
+          ));
         }
       }
     });

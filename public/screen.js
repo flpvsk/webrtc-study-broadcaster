@@ -1,4 +1,10 @@
 (async function() {
+  const config = {
+    iceServers: [{
+      urls: ['stun:stun.l.google.com:19302']
+    }]
+  };
+
   window.play.addEventListener('click', () => {
     try {
       console.log('here');
@@ -23,7 +29,12 @@
 
     return new Promise((resolve, reject) => {
       try {
-        ws = new WebSocket(`wss://${window.location.host}`);
+        const protocol = (
+          window.location.protocol === 'https:' ?
+            'wss:' :
+            'ws:'
+        );
+        ws = new WebSocket(`${protocol}//${window.location.host}`);
 
         const onOpen = () => {
           ws.send(JSON.stringify({
@@ -52,7 +63,7 @@
         console.log('msg', msg);
 
         if (msg.type === 'offer') {
-          const peerConnection = new RTCPeerConnection();
+          const peerConnection = new RTCPeerConnection(config);
           connections.set(msg.from, peerConnection);
 
           peerConnection.ontrack = (e) => {
@@ -60,6 +71,17 @@
             window.v.srcObject = e.streams[0];
             window.wait.classList.add('hidden');
             window.controls.classList.remove('hidden');
+          };
+
+          peerConnection.onicecandidate = (e) => {
+            if (e.candidate) {
+              socket.send(JSON.stringify({
+                type: 'candidate',
+                from: peerId,
+                to: msg.from,
+                data: e.candidate,
+              }));
+            }
           };
 
           await peerConnection.setRemoteDescription(msg.data);
@@ -79,8 +101,20 @@
           const connection = connections.get(msg.from);
           if (connection) {
             console.log('Disconnecting from', msg.from);
+            connection.ontrack = null;
+            connection.onicecandidate = null;
             connection.close();
             connections.delete(msg.from);
+          }
+        }
+
+        if (msg.type === 'candidate') {
+          const connection = connections.get(msg.from);
+          if (connection) {
+            console.log('Adding candidate to', msg.from);
+            connection.addIceCandidate(new RTCIceCandidate(
+              msg.data
+            ));
           }
         }
       } catch (e) {
