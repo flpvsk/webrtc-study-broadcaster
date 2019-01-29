@@ -7,7 +7,6 @@
 
   window.play.addEventListener('click', () => {
     try {
-      console.log('here');
       window.v.play();
       window.controls.classList.add('hidden');
     } catch (e) {

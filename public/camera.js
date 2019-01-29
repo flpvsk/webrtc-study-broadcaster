@@ -54,6 +54,7 @@
     });
 
     window.v.srcObject = mediaStream;
+    // window.v.play();
 
     const socket = await getSocket(peerId, peerType);
     socket.addEventListener('message', async (e) => {
@@ -65,7 +66,10 @@
           const peerConnection = new RTCPeerConnection(config);
           connections.set(screen, peerConnection);
 
-          peerConnection.addStream(window.v.srcObject);
+          // peerConnection.addStream(window.v.srcObject);
+          for (let track of mediaStream.getTracks()) {
+            peerConnection.addTrack(track, mediaStream);
+          }
 
           const sdp = await peerConnection.createOffer();
           await peerConnection.setLocalDescription(sdp);
